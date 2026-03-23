@@ -1,21 +1,20 @@
-# Moodle STACK Random Generator Parser
+# Moodle Simple STACK e Multichoice Parser
 
-O script `xml_parser.py` converte questões numéricas randômicas definidas em YAML para o formato XML compatível com o plugin [STACK](https://stack-assessment.org/) do Moodle. Em vez de editar XML complexo manualmente, você descreve cada questão — variáveis, fórmulas e texto — em um arquivo YAML simples e legível.
+O script `xml_parser.py` converte questões Moodle STACK randômicas (numéricas e algébricas) e questões de múltipla escolha (multichoice) definidas em YAML para o formato XML compatível com o Moodle. Em vez de editar XML complexo manualmente, o usuário descreve cada questão — variáveis, fórmulas e texto — em um arquivo YAML simples e legível. Restrito a questões com uma única resposta correta e PRTs (Potential response trees) de nodo único.
 
 ## Como Executar
 
 ```bash
-python3 xml_parser.py <arquivo_yaml> [template_xml] [saida_xml]
+python3 xml_parser.py <arquivo_yaml> [saida_xml]
 ```
 
 | Argumento        | Descrição                                               | Obrigatório? | Padrão                |
 |------------------|---------------------------------------------------------|--------------|-----------------------|
 | `<arquivo_yaml>` | Arquivo YAML com a definição das questões               | **Sim**      | —                     |
-| `[template_xml]` | Template XML do STACK usado como base                   | Não          | `stacknumerical_template.xml`  |
 | `[saida_xml]`    | Nome do arquivo XML gerado                              | Não          | `output.xml`    |
 
 > [!TIP]
-> Use sempre um template "limpo" (como `stacknumerical_template.xml`) que contenha apenas uma questão-modelo. O parser extrai a primeira ocorrência de `<question type="stack">` como fôrma para gerar todas as demais.
+> O parser carrega automaticamente os templates necessários (`stacknumerical_template.xml`, `stackalgebraic_template.xml` e `multichoice_template.xml`) do diretório atual.
 
 ---
 
@@ -39,11 +38,12 @@ Cada questão é um item da lista com as seguintes propriedades:
 - id: 0001
   name: Nome da Questão
   type: numerical
-  testoptions: 0.1        # Tolerância da resposta (padrão: 0.05)
+  testoptions: 0.1        # Tolerância da resposta (padrão: 0.05) - STACK
   significantfigures: 1   # Alg. significativos globais para TODAS as variáveis (padrão: 0 = desabilitado)
   penalty: 0.1            # Penalidade por tentativa errada (padrão: 0.1)
+  displaystyle: true      # Força \displaystyle em todo LaTeX (padrão: true)
   questiontext: |
-    <p>... HTML da questão ...</p>
+    Texto da questão em **Markdown**.
   questionvariables:
     var1: expressão_maxima
 ```
@@ -51,18 +51,35 @@ Cada questão é um item da lista com as seguintes propriedades:
 | Campo                | Descrição                                                                                     | Padrão   |
 |----------------------|-----------------------------------------------------------------------------------------------|----------|
 | `name`               | Nome da questão no Moodle                                                                    | —        |
-| `type`               | Tipo (apenas `numerical` é suportado)                                                        | —        |
-| `testoptions`        | Tolerância numérica do teste de resposta                                                     | `0.05`   |
+| `type`               | Tipo (`numerical`, `algebraic` ou `multichoice`)                                             | —        |
+| `testoptions`        | Tolerância numérica do teste de resposta (apenas STACK)                                      | `0.05`   |
 | `significantfigures` | Algarismos significativos aplicados a todas as variáveis (0 = desabilitado)                   | `0`      |
 | `penalty`            | Fator de penalidade por tentativa incorreta                                                  | `0.1`    |
-| `questiontext`       | Texto HTML da questão, com as tags simplificadas descritas abaixo                            | —        |
-| `questionvariables`  | Mapa de variáveis → expressões Maxima/STACK                                                  | —        |
+| `displaystyle`       | Se `true`, adiciona `\displaystyle` ao início de todas as fórmulas LaTeX                     | `true`   |
+| `questiontext`       | Texto da questão em **Markdown**, com as tags simplificadas descritas abaixo                 | —        |
+| `questionvariables`  | Mapa de variáveis → expressões Maxima/STACK (apenas para `numerical` e `algebraic`)           | —        |
 
 ---
 
-## Tags Simplificadas no Texto da Questão
+## Suporte a Markdown e LaTeX
 
-O `questiontext` utiliza duas notações compactas que o parser converte nas tags plenas exigidas pelo STACK.
+O campo `questiontext` aceita sintaxe Markdown, que é convertida automaticamente para HTML.
+
+### Controle de Display Matemático (LaTeX)
+
+O parser inclui facilidades para o gerenciamento de fórmulas LaTeX (`\( ... \)` ou `\[ ... \]`):
+
+- **`displaystyle`: true**: (Padrão) Insere automaticamente `\displaystyle` no início de cada expressão LaTeX da questão.
+- **`\ds`**: Atalho dentro do LaTeX que é sempre convertido para `\displaystyle`. Útil se `displaystyle` global estiver desativado mas você desejar formatar apenas uma equação específica: `\(\ds \int f(x)dx \)`.
+
+> [!IMPORTANT]
+> O parser protege as barras invertidas (`\`) do Markdown, então você pode escrever fórmulas LaTeX naturalmente.
+
+---
+
+## Tags Simplificadas no Texto da Questão (STACK)
+
+O `questiontext` utiliza duas notações compactas que o parser converte nas tags plenas exigidas pelo STACK (tipos `numerical` e `algebraic`).
 
 ### Variáveis de Exibição (Output): `[[var]]`
 
@@ -79,8 +96,29 @@ Cria uma caixa de entrada onde o estudante digita a resposta. O parser gera auto
 - `{{var, s:N}}` — Algarismos significativos para a resposta.
 - `{{var, v:P}}` — Peso (valor) da resposta. Modifica a tag `<value>` na PRT. **Padrão: `1.0`** (se omitido).
 
+---
+
+## Questões de Múltipla Escolha (`multichoice`)
+
+Para questões do tipo `multichoice`, o texto da questão deve listar as opções usando uma lista Markdown (`- `), com a porcentagem da nota entre colchetes ao final de cada linha:
+
+```yaml
+- id: 0004
+  name: Poliedros regulares
+  type: multichoice
+  penalty: 1.0
+  questiontext: |
+    Marque as afirmações verdadeiras sobre poliedros regulares.
+    - As faces são polígonos quaisquer. [-30%]
+    - Todos são convexos. [+30%]
+    - Só existem 5 poliedros regulares. [+50%]
+    - Pelo menos um deles possui face hexagonal. [-30%]
+    - Todos possuem faces triangulares. [-30%]
+    - Também são conhecidos como sólidos platônicos. [+20%]
+```
+
 > [!NOTE]
-> Se um texto ou unidade (como "m³") seguir imediatamente as chaves `{{var}}`, o parser posicionará as tags de validação e feedback após essa unidade.
+> O parser extrairá as linhas que começam com `-` e terminam com `[+/-XX%]` para criar as alternativas do Moodle. O restante do texto será usado como o corpo da questão.
 
 ---
 
@@ -114,28 +152,7 @@ Exemplo: um float entre 2.0 e 7.0 → `2.0 + rand(5.0)`
 
 ## Exemplo Completo
 
-```yaml
-- category: Geometria Espacial
-
-- id: 101
-  name: Volume do Paralelepípedo
-  type: numerical
-  penalty: 0.1
-  questiontext: |
-    <p>Calcule o volume de um paralelepípedo com largura [[x, s:2]] cm,
-    altura [[y]] cm e profundidade [[z]] cm.</p>
-    <p>Volume: {{ta1, s:2, v:5}} cm³</p>
-  questionvariables:
-    x: 10 + rand(20)
-    y: 2.0 + rand(5.0)
-    z: 2.0 + rand(4.0)
-    ta1: x*y*z
-```
-
-**O que acontece ao executar o parser:**
-1. `[[x, s:2]]` → A variável `x` é exibida com 2 algarismos significativos via `{@x@}`.
-2. `{{ta1, s:2, v:5}}` → Cria um campo de entrada com peso 5.0 e resposta esperada `ta1` (com 2 algarismos significativos).
-3. As expressões em `questionvariables` são inseridas no XML tal como escritas.
+Consulte o arquivo `questions_example.yaml` para um exemplo com os três tipos de questões suportados.
 
 ---
 
@@ -233,5 +250,7 @@ As variáveis e fórmulas no campo `questionvariables` utilizam a linguagem do [
 | `%i` ou `i` | Unidade imaginária √(-1) |
 | `inf` | Infinito (∞) |
 
+---
+
 > [!NOTE]
-> Para uma referência completa das funções do Maxima no STACK, consulte a [documentação oficial](https://docs.stack-assessment.org/en/CAS/index.md).
+> Para uma referência completa das funções do Maxima no STACK, consulte a [documentação oficial](https://docs.stack-assessment.org/en/CAS/).

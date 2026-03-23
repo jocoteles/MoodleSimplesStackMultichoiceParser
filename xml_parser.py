@@ -1,14 +1,39 @@
 import yaml
 import re
 import sys
+import markdown
 
 def parse_yaml(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
 
+def markdown_to_html(text, displaystyle=True):
+    # LaTeX fixes: replace \ds with \displaystyle and optionally prepend \displaystyle
+    def fix_latex(m):
+        content = m.group(2)
+        # First always replace \ds with \displaystyle
+        content = re.sub(r'\\ds\b', r'\\displaystyle ', content)
+        if displaystyle:
+            inner = content.strip()
+            # If not starting with \displaystyle, add it
+            if not inner.startswith('\\displaystyle'):
+                content = '\\displaystyle ' + content
+        return m.group(1) + content + m.group(3)
+    
+    # Match \( ... \) and \[ ... \]
+    text = re.sub(r'(\\\(|\\\[)(.*?)(\\\)|\\\])', fix_latex, text, flags=re.DOTALL)
 
-def process_question(q, stack_base, input_template, prt_template):
+    # Escape backslashes so that markdown doesn't strip them (e.g. \( -> \\( )
+    text = text.replace('\\', '\\\\')
+    
+    # Ensure there's a blank line before list starts if one is missing
+    text = re.sub(r'([^\n])\n\s*([-*+]|\d+\.)\s+', r'\1\n\n\2 ', text)
+    
+    return markdown.markdown(text, extensions=['extra', 'nl2br'])
+
+
+def process_stack_question(q, stack_base, input_template, prt_template, displaystyle=True):
     # Extract defaults
     testoptions_default = str(q.get('testoptions', '0.05'))
     global_s = str(q.get('significantfigures', '0'))
@@ -16,6 +41,10 @@ def process_question(q, stack_base, input_template, prt_template):
     q_name = q.get('name', 'Generated Question')
     q_penalty = str(q.get('penalty', '0.1'))
     q_text = q.get('questiontext', '')
+
+    # Convert Markdown to HTML
+    q_text = markdown_to_html(q_text, displaystyle=displaystyle)
+    
     q_vars = q.get('questionvariables', {})
     
     inputs_xml = ""
@@ -117,13 +146,13 @@ def process_question(q, stack_base, input_template, prt_template):
     
     # Handle CDATA in questiontext
     xml_q = re.sub(r'(<questiontext format="html">\s*<text><!\[CDATA\[).*?(\]\]></text>\s*</questiontext>)', 
-                   r'\g<1>' + q_text + r'\g<2>', xml_q, flags=re.DOTALL)
+                   lambda m: m.group(1) + q_text + m.group(2), xml_q, flags=re.DOTALL)
                    
     xml_q = re.sub(r'(<questionvariables>\s*<text>).*?(</text>\s*</questionvariables>)', 
-                   r'\g<1>' + qv_text + r'\g<2>', xml_q, flags=re.DOTALL)
+                   lambda m: m.group(1) + qv_text + m.group(2), xml_q, flags=re.DOTALL)
                    
     xml_q = re.sub(r'(<questionnote>\s*<text>).*?(</text>\s*</questionnote>)', 
-                   r'\g<1>' + q_notes + r'\g<2>', xml_q, flags=re.DOTALL)
+                   lambda m: m.group(1) + q_notes + m.group(2), xml_q, flags=re.DOTALL)
     
     # Insert inputs and prts before </question>
     xml_q = re.sub(r'</question>', f'{inputs_xml}\n{prts_xml}\n</question>', xml_q)
@@ -131,23 +160,106 @@ def process_question(q, stack_base, input_template, prt_template):
     return xml_q
 
 
+def process_multichoice_question(q, multichoice_base, answer_template, displaystyle=True):
+    q_name = q.get('name', 'Generated Multichoice Question')
+    q_penalty = str(q.get('penalty', '0.3333333'))
+    q_text_raw = q.get('questiontext', '')
+    
+    # Parse options from questiontext
+    # Expected format: "- Option text [percentage%]"
+    lines = q_text_raw.split('\n')
+    body_lines = []
+    options = []
+    
+    option_re = re.compile(r'^\s*-\s+(.*?)\s*\[([+-]?\d+)\s*%\]\s*$')
+    
+    for line in lines:
+        match = option_re.match(line)
+        if match:
+            opt_text = match.group(1)
+            opt_fraction = match.group(2)
+            options.append({'text': opt_text, 'fraction': opt_fraction})
+        else:
+            body_lines.append(line)
+            
+    q_text = "\n".join(body_lines).strip()
+    q_text = markdown_to_html(q_text, displaystyle=displaystyle)
+    
+    answers_xml = ""
+    for opt in options:
+        opt_html = markdown_to_html(opt["text"], displaystyle=displaystyle)
+        curr_ans = answer_template
+        curr_ans = re.sub(r'fraction=".*?"', f'fraction="{opt["fraction"]}"', curr_ans)
+        curr_ans = re.sub(r'(<text><!\[CDATA\[).*?(\]\]></text>)', 
+                          lambda m: m.group(1) + opt_html + m.group(2), curr_ans, flags=re.DOTALL)
+        answers_xml += curr_ans + "\n"
+        
+    xml_q = multichoice_base
+    xml_q = re.sub(r'(<name>\s*<text>).*?(</text>\s*</name>)', lambda m: m.group(1) + q_name + m.group(2), xml_q, flags=re.DOTALL)
+    xml_q = re.sub(r'<penalty>.*?</penalty>', f'<penalty>{q_penalty}</penalty>', xml_q)
+    xml_q = re.sub(r'(<questiontext format="html">\s*<text><!\[CDATA\[).*?(\]\]></text>\s*</questiontext>)', 
+                   lambda m: m.group(1) + q_text + m.group(2), xml_q, flags=re.DOTALL)
+    
+    # Toggle single/multiple choice based on whether there's a 100% option? 
+    # Or just keep template default. Let's look at template.
+    # multichoice_template.xml has <single>false</single>
+    
+    # Insert answers before </question>
+    xml_q = re.sub(r'</question>', f'{answers_xml}\n</question>', xml_q)
+    
+    return xml_q
+
+
+def load_template(template_path):
+    with open(template_path, 'r', encoding='utf-8') as f:
+        xml = f.read()
+    
+    stack_match = re.search(r'(<question type="stack">.*?</question>)', xml, re.DOTALL)
+    if stack_match:
+        stack_template = stack_match.group(1)
+        input_match = re.search(r'(<input>.*?</input>)', stack_template, re.DOTALL)
+        input_template = input_match.group(1) if input_match else ""
+        prt_match = re.search(r'(<prt>.*?</prt>)', stack_template, re.DOTALL)
+        prt_template = prt_match.group(1) if prt_match else ""
+        stack_base = re.sub(r'<input>.*?</input>\s*', '', stack_template, flags=re.DOTALL)
+        stack_base = re.sub(r'<prt>.*?</prt>\s*', '', stack_base, flags=re.DOTALL)
+        return {'type': 'stack', 'base': stack_base, 'input': input_template, 'prt': prt_template}
+    
+    mc_match = re.search(r'(<question type="multichoice">.*?</question>)', xml, re.DOTALL)
+    if mc_match:
+        mc_template = mc_match.group(1)
+        answer_match = re.search(r'(<answer\b.*?>.*?</answer>)', mc_template, re.DOTALL)
+        answer_template = answer_match.group(1) if answer_match else ""
+        mc_base = re.sub(r'<answer\b.*?>.*?</answer>\s*', '', mc_template, flags=re.DOTALL)
+        return {'type': 'multichoice', 'base': mc_base, 'answer': answer_template}
+    
+    return None
+
+
 def main():
     if len(sys.argv) < 2:
-        print("Uso: python3 stack_parser.py <arquivo_yaml> [template_xml] [saida_xml]")
+        print("Uso: python3 xml_parser.py <arquivo_yaml> [saida_xml]")
         print("  <arquivo_yaml>  : arquivo YAML com as questões (obrigatório)")
-        print("  [template_xml]  : template XML do STACK (padrão: stacknumerical_template.xml)")
         print("  [saida_xml]     : arquivo XML de saída (padrão: output.xml)")
         sys.exit(1)
 
     yaml_file = sys.argv[1]
-    xml_file = sys.argv[2] if len(sys.argv) > 2 else 'stacknumerical_template.xml'
-    out_file = sys.argv[3] if len(sys.argv) > 3 else 'output.xml'
+    out_file = sys.argv[2] if len(sys.argv) > 2 else 'output.xml'
         
     data = parse_yaml(yaml_file)
-    with open(xml_file, 'r', encoding='utf-8') as f:
-        xml = f.read()
-        
-    category_match = re.search(r'(<question type="category">.*?</question>)', xml, re.DOTALL)
+    
+    # Load all needed templates
+    templates = {
+        'numerical': load_template('stacknumerical_template.xml'),
+        'algebraic': load_template('stackalgebraic_template.xml'),
+        'multichoice': load_template('multichoice_template.xml')
+    }
+    
+    # For category XML, use numerical template as base if available
+    with open('stacknumerical_template.xml', 'r', encoding='utf-8') as f:
+        xml_cat_base = f.read()
+    
+    category_match = re.search(r'(<question type="category">.*?</question>)', xml_cat_base, re.DOTALL)
     category_xml = category_match.group(1) if category_match else ""
     
     cat_name = "StackQuestions"
@@ -161,23 +273,7 @@ def main():
 
     if category_xml:
         category_xml = re.sub(r'(<category>\s*<text>).*?(</text>\s*</category>)', 
-                              r'\g<1>top/' + str(cat_name) + r'\g<2>', category_xml, flags=re.DOTALL)
-
-    stack_match = re.search(r'(<question type="stack">.*?</question>)', xml, re.DOTALL)
-    if not stack_match:
-        print("Stack template not found in XML!")
-        sys.exit(1)
-        
-    stack_template = stack_match.group(1)
-
-    input_match = re.search(r'(<input>.*?</input>)', stack_template, re.DOTALL)
-    input_template = input_match.group(1) if input_match else ""
-
-    prt_match = re.search(r'(<prt>.*?</prt>)', stack_template, re.DOTALL)
-    prt_template = prt_match.group(1) if prt_match else ""
-
-    stack_base = re.sub(r'<input>.*?</input>\s*', '', stack_template, flags=re.DOTALL)
-    stack_base = re.sub(r'<prt>.*?</prt>\s*', '', stack_base, flags=re.DOTALL)
+                               r'\g<1>top/' + str(cat_name) + r'\g<2>', category_xml, flags=re.DOTALL)
 
     out = ['<?xml version="1.0" encoding="UTF-8"?>\n<quiz>\n']
     if category_xml:
@@ -185,9 +281,26 @@ def main():
 
     items = data if isinstance(data, list) else [data]
     for q in items:
-        if 'type' in q and q['type'] == 'numerical':
-            xml_q = process_question(q, stack_base, input_template, prt_template)
-            out.append(xml_q + '\n')
+        q_type = q.get('type')
+        if not q_type: continue
+        
+        # Displaystyle option: default is True (case-insensitive)
+        ds = str(q.get('displaystyle', 'true')).lower() == 'true'
+        
+        if q_type in ['numerical', 'algebraic']:
+            tpl = templates.get(q_type)
+            if tpl:
+                xml_q = process_stack_question(q, tpl['base'], tpl['input'], tpl['prt'], displaystyle=ds)
+                out.append(xml_q + '\n')
+            else:
+                print(f"Warning: Template for {q_type} not found.")
+        elif q_type == 'multichoice':
+            tpl = templates.get('multichoice')
+            if tpl:
+                xml_q = process_multichoice_question(q, tpl['base'], tpl['answer'], displaystyle=ds)
+                out.append(xml_q + '\n')
+            else:
+                print(f"Warning: Template for multichoice not found.")
 
     out.append('</quiz>\n')
 

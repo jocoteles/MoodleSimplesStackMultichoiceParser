@@ -1,3 +1,9 @@
+# Credits
+
+This document was taken in its entirety from the repository: [moodle-qtype_stack/doc/en/CAS](https://github.com/maths/moodle-qtype_stack/tree/master/doc/en/CAS).
+
+---
+
 # Buggy rules
 
 In order to establish that the student has done something particular but wrong, it is useful for us to be able to apply wrong or buggy rules to expressions.  A typical example would be to expand out powers in the wrong way, e.g.

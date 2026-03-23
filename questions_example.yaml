@@ -39,10 +39,11 @@
   name: Cálculo
   type: algebraic
   penalty: 0.3
+  displaystyle: false
   questiontext: |
     Encontre:
-    - \(\int [[expr]] \mathrm{d}x\): {{ta1}}
-    - \(\frac{d^[[n]]}{dx^[[n]]}[[expr]]\): {{ta2}}
+    - \(\ds\int [[expr]] \mathrm{d}x\): {{ta1}}
+    - \(\ds\frac{d^[[n]]}{dx^[[n]]}[[expr]]\): {{ta2}}
   questionvariables:
     n: 2 + rand(3)
     expr: x^5

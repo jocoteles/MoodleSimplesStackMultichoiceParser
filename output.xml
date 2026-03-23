@@ -2,7 +2,7 @@
 <quiz>
 <question type="category">
     <category>
-      <text>top/Geometria</text>
+      <text>top/Geometria e Cálculo</text>
     </category>
     <info format="html">
       <text></text>
@@ -14,10 +14,15 @@
       <text>Paralelepípedo</text>
     </name>
     <questiontext format="html">
-      <text><![CDATA[<p>Considere um paralelepípedo com largura \(x\), comprimento \(y\) e altura \(z\), sendo \(x = {@x@}\) m, \(y = {@y@}\) m e \(z = {@z@}\) m. Calcule:</p>
+      <text><![CDATA[<p>Considere um paralelepípedo com largura \(\displaystyle x\), comprimento \(\displaystyle y\) e altura \(\displaystyle z\), sendo \(\displaystyle x = {@x@}\) m, \(\displaystyle y = {@y@}\) m e \(\displaystyle z = {@z@}\) m. Calcule:</p>
+<ul>
+<li>
 <p>Volume: [[input:ans1]] m³ [[validation:ans1]] [[feedback:prt1]]</p>
+</li>
+<li>
 <p>Área da base: [[input:ans2]] m² [[validation:ans2]] [[feedback:prt2]]</p>
-]]></text>
+</li>
+</ul>]]></text>
     </questiontext>
     <generalfeedback format="html">
       <text></text>
@@ -171,11 +176,18 @@ ta2: significantfigures(x*y, 1);</text>
       <text>Cilindro</text>
     </name>
     <questiontext format="html">
-      <text><![CDATA[<p> Considere um cilindro com raio da base igual a {@r@} cm e altura igual a {@h@} cm. Calcule:</p>
+      <text><![CDATA[<p>Considere um cilindro com raio da base igual a {@r@} cm e altura igual a {@h@} cm. Calcule:</p>
+<ul>
+<li>
 <p>Volume: [[input:ans1]] cm³ [[validation:ans1]] [[feedback:prt1]]</p>
+</li>
+<li>
 <p>Área da base: [[input:ans2]] cm² [[validation:ans2]] [[feedback:prt2]]</p>
+</li>
+<li>
 <p>Área lateral: [[input:ans3]] cm² [[validation:ans3]] [[feedback:prt3]]</p>
-]]></text>
+</li>
+</ul>]]></text>
     </questiontext>
     <generalfeedback format="html">
       <text></text>
@@ -373,6 +385,233 @@ ta3: 2*pi*r*h;</text>
         </falsefeedback>
       </node>
     </prt>
+
+</question>
+<question type="stack">
+    <name>
+      <text>Cálculo</text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[<p>Encontre:</p>
+<ul>
+<li>
+<p>\(\displaystyle \int {@expr@} \mathrm{d}x\): [[input:ans1]] [[validation:ans1]] [[feedback:prt1]]</p>
+</li>
+<li>
+<p>\(\displaystyle \frac{d^{@n@}}{dx^{@n@}}{@expr@}\): [[input:ans2]] [[validation:ans2]] [[feedback:prt2]]</p>
+</li>
+</ul>]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text></text>
+    </generalfeedback>
+    <defaultgrade>1.0000000</defaultgrade>
+    <penalty>0.3</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <stackversion>
+      <text>2023010400</text>
+    </stackversion>
+    <questionvariables>
+      <text>n: 2 + rand(3);
+expr: x^5;
+ta1: int(expr,x)+c;
+ta2: diff(expr, x, n);</text>
+    </questionvariables>
+    <specificfeedback format="html">
+      <text></text>
+    </specificfeedback>
+    <questionnote>
+      <text>expr={@expr@}, n={@n@}</text>
+    </questionnote>
+    <questionsimplify>1</questionsimplify>
+    <assumepositive>0</assumepositive>
+    <assumereal>0</assumereal>
+    <prtcorrect format="html">
+      <text><![CDATA[<span style="font-size: 1.5em; color:green;"><i class="fa fa-check"></i></span> Resposta correta.]]></text>
+    </prtcorrect>
+    <prtpartiallycorrect format="html">
+      <text><![CDATA[<span style="font-size: 1.5em; color:orange;"><i class="fa fa-adjust"></i></span> Resposta parcialmente correta.]]></text>
+    </prtpartiallycorrect>
+    <prtincorrect format="html">
+      <text><![CDATA[<span style="font-size: 1.5em; color:red;"><i class="fa fa-times"></i></span> Resposta incorreta.]]></text>
+    </prtincorrect>
+    <multiplicationsign>dot</multiplicationsign>
+    <sqrtsign>1</sqrtsign>
+    <complexno>i</complexno>
+    <inversetrig>cos-1</inversetrig>
+    <logicsymbol>lang</logicsymbol>
+    <matrixparens>[</matrixparens>
+    <variantsselectionseed></variantsselectionseed>
+    <input>
+      <name>ans1</name>
+      <type>algebraic</type>
+      <tans>ta1</tans>
+      <boxsize>15</boxsize>
+      <strictsyntax>1</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>1</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>0</checkanswertype>
+      <mustverify>1</mustverify>
+      <showvalidation>1</showvalidation>
+      <options></options>
+    </input>
+<input>
+      <name>ans2</name>
+      <type>algebraic</type>
+      <tans>ta2</tans>
+      <boxsize>15</boxsize>
+      <strictsyntax>1</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>1</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>0</checkanswertype>
+      <mustverify>1</mustverify>
+      <showvalidation>1</showvalidation>
+      <options></options>
+    </input>
+
+<prt>
+      <name>prt1</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      <feedbackstyle>1</feedbackstyle>
+      <feedbackvariables>
+        <text></text>
+      </feedbackvariables>
+      <node>
+        <name>0</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>ans1</sans>
+        <tans>ta1</tans>
+        <testoptions>0.05</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt1-1-T</trueanswernote>
+        <truefeedback format="html">
+          <text></text>
+        </truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt1-1-F</falseanswernote>
+        <falsefeedback format="html">
+          <text></text>
+        </falsefeedback>
+      </node>
+    </prt>
+<prt>
+      <name>prt2</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      <feedbackstyle>1</feedbackstyle>
+      <feedbackvariables>
+        <text></text>
+      </feedbackvariables>
+      <node>
+        <name>0</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>ans2</sans>
+        <tans>ta2</tans>
+        <testoptions>0.05</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt2-1-T</trueanswernote>
+        <truefeedback format="html">
+          <text></text>
+        </truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt2-1-F</falseanswernote>
+        <falsefeedback format="html">
+          <text></text>
+        </falsefeedback>
+      </node>
+    </prt>
+
+</question>
+<question type="multichoice">
+    <name>
+      <text>Poliedros regulares</text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[<p>Marque as afirmações verdadeiras sobre poliedros regulares.</p>]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text></text>
+    </generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>1.0</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>false</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>none</answernumbering>
+    <showstandardinstruction>0</showstandardinstruction>
+    <correctfeedback format="html">
+      <text>Sua resposta está correta.</text>
+    </correctfeedback>
+    <partiallycorrectfeedback format="html">
+      <text>Sua resposta está parcialmente correta.</text>
+    </partiallycorrectfeedback>
+    <incorrectfeedback format="html">
+      <text>Sua resposta está incorreta.</text>
+    </incorrectfeedback>
+    <shownumcorrect/>
+    <answer fraction="-30" format="html">
+      <text><![CDATA[<p>As faces são polígonos quaisquer.</p>]]></text>
+      <feedback format="html">
+        <text></text>
+      </feedback>
+    </answer>
+<answer fraction="+30" format="html">
+      <text><![CDATA[<p>Todos são convexos.</p>]]></text>
+      <feedback format="html">
+        <text></text>
+      </feedback>
+    </answer>
+<answer fraction="+50" format="html">
+      <text><![CDATA[<p>Só existem 5 poliedros regulares.</p>]]></text>
+      <feedback format="html">
+        <text></text>
+      </feedback>
+    </answer>
+<answer fraction="-30" format="html">
+      <text><![CDATA[<p>Pelo menos um deles possui face hexagonal.</p>]]></text>
+      <feedback format="html">
+        <text></text>
+      </feedback>
+    </answer>
+<answer fraction="-30" format="html">
+      <text><![CDATA[<p>Todos possuem faces triangulares.</p>]]></text>
+      <feedback format="html">
+        <text></text>
+      </feedback>
+    </answer>
+<answer fraction="+20" format="html">
+      <text><![CDATA[<p>Também são conhecidos como sólidos platônicos.</p>]]></text>
+      <feedback format="html">
+        <text></text>
+      </feedback>
+    </answer>
 
 </question>
 </quiz>
