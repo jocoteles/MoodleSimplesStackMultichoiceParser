@@ -30,8 +30,8 @@
       <text>2023010400</text>
     </stackversion>
     <questionvariables>
-      <text>x: significantfigures(10 + rand(20.0), 1);
-y: significantfigures(2 + rand(5.0), 2);
+      <text>x: significantfigures(10 + rand(20), 1);
+y: significantfigures(2 + rand(5), 2);
 z: significantfigures(2.0 + rand(5.0), 4);
 ta1: significantfigures(x*y*z, 2);
 ta2: significantfigures(x*y, 1);</text>
@@ -188,7 +188,7 @@ ta2: significantfigures(x*y, 1);</text>
       <text>2023010400</text>
     </stackversion>
     <questionvariables>
-      <text>r: 1 + rand(10.0);
+      <text>r: 1 + rand(10);
 h: 2.0 + rand(5.0);
 ta1: significantfigures(pi*r*r*h, 2);
 ta2: pi*r*r;

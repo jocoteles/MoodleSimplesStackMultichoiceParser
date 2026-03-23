@@ -6,38 +6,7 @@ def parse_yaml(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
-def modify_rand(expr):
-    # YAML -> XML
-    # rand(a, b) -> a + rand(b.0)
-    # rand(a) -> rand(a.0)
-    # randint(a, b) -> a + rand(b)
-    # randint(a) -> rand(a)
-    
-    # Process randint first so it doesn't conflict with rand
-    def repl_randint_ab(m):
-        return f"{m.group(1)} + rand({m.group(2)})"
-    
-    def repl_randint_a(m):
-        return f"rand({m.group(1)})"
 
-    def to_float_str(val):
-        val = val.strip()
-        if '.' not in val:
-            return val + '.0'
-        return val
-
-    def repl_rand_ab(m):
-        return f"{m.group(1)} + rand({to_float_str(m.group(2))})"
-
-    def repl_rand_a(m):
-        return f"rand({to_float_str(m.group(1))})"
-
-    expr = re.sub(r'randint\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)', repl_randint_ab, expr)
-    expr = re.sub(r'randint\s*\(\s*([^,)]+?)\s*\)', repl_randint_a, expr)
-    expr = re.sub(r'rand\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)', repl_rand_ab, expr)
-    expr = re.sub(r'rand\s*\(\s*([^,)]+?)\s*\)', repl_rand_a, expr)
-    
-    return expr
 
 def process_question(q, stack_base, input_template, prt_template):
     # Extract defaults
@@ -90,7 +59,7 @@ def process_question(q, stack_base, input_template, prt_template):
         var_name = parts[0]
         
         s_val = global_s
-        v_val = "0"
+        v_val = "1"
         
         for part in parts[1:]:
             part = part.strip()
@@ -129,7 +98,7 @@ def process_question(q, stack_base, input_template, prt_template):
     # Process questionvariables
     qv_lines = []
     for var_name, expr in q_vars.items():
-        expr = modify_rand(str(expr))
+        expr = str(expr)
         s_val = var_sigs.get(var_name, global_s)
         if s_val == "0":
             qv_lines.append(f"{var_name}: {expr};")
@@ -163,16 +132,16 @@ def process_question(q, stack_base, input_template, prt_template):
 
 
 def main():
-    if len(sys.argv) < 3:
-        yaml_file = 'stack_example.yaml'
-        xml_file = 'stack_example.xml'
-    else:
-        yaml_file = sys.argv[1]
-        xml_file = sys.argv[2]
-        
-    out_file = 'stack_output.xml'
-    if len(sys.argv) > 3:
-        out_file = sys.argv[3]
+    if len(sys.argv) < 2:
+        print("Uso: python3 stack_parser.py <arquivo_yaml> [template_xml] [saida_xml]")
+        print("  <arquivo_yaml>  : arquivo YAML com as questões (obrigatório)")
+        print("  [template_xml]  : template XML do STACK (padrão: stacknumerical_template.xml)")
+        print("  [saida_xml]     : arquivo XML de saída (padrão: output.xml)")
+        sys.exit(1)
+
+    yaml_file = sys.argv[1]
+    xml_file = sys.argv[2] if len(sys.argv) > 2 else 'stacknumerical_template.xml'
+    out_file = sys.argv[3] if len(sys.argv) > 3 else 'output.xml'
         
     data = parse_yaml(yaml_file)
     with open(xml_file, 'r', encoding='utf-8') as f:
@@ -181,14 +150,14 @@ def main():
     category_match = re.search(r'(<question type="category">.*?</question>)', xml, re.DOTALL)
     category_xml = category_match.group(1) if category_match else ""
     
-    cat_name = "Geometria"
+    cat_name = "StackQuestions"
     if isinstance(data, list):
         for item in data:
             if 'category' in item:
                 cat_name = item['category']
                 break
     else:
-        cat_name = data.get('category', 'Geometria')
+        cat_name = data.get('category', 'StackQuestions')
 
     if category_xml:
         category_xml = re.sub(r'(<category>\s*<text>).*?(</text>\s*</category>)', 

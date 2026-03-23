@@ -1,0 +1,63 @@
+# Model for numeric questions in STACK Moodle
+
+- category: Geometria e Cálculo
+
+- id: 0001
+  name: Paralelepípedo
+  type: numerical
+  testoptions: 0.1
+  significantfigures: 1
+  penalty: 0.1
+  questiontext: |
+    Considere um paralelepípedo com largura \(x\), comprimento \(y\) e altura \(z\), sendo \(x = [[x]]\) m, \(y = [[y, s:2]]\) m e \(z = [[z, s:4]]\) m. Calcule:
+    - Volume: {{ta1, s:2, v:7}} m³
+    - Área da base: {{ta2, v:3}} m²
+  questionvariables:
+    x: 10 + rand(20)
+    y: 2 + rand(5)
+    z: 2.0 + rand(5.0)
+    ta1: x*y*z
+    ta2: x*y
+
+- id: 0002
+  name: Cilindro
+  type: numerical
+  penalty: 0.1
+  questiontext: |
+    Considere um cilindro com raio da base igual a [[r]] cm e altura igual a [[h]] cm. Calcule:
+    - Volume: {{ta1, s:2, v:5}} cm³
+    - Área da base: {{ta2, v:5}} cm²
+    - Área lateral: {{ta3, v:5}} cm²
+  questionvariables:
+    r: 1 + rand(10)
+    h: 2.0 + rand(5.0)
+    ta1: pi*r*r*h
+    ta2: pi*r*r
+    ta3: 2*pi*r*h
+
+- id: 0003
+  name: Cálculo
+  type: algebraic
+  penalty: 0.3
+  questiontext: |
+    Encontre:
+    - \(\int [[expr]] \mathrm{d}x\): {{ta1}}
+    - \(\frac{d^[[n]]}{dx^[[n]]}[[expr]]\): {{ta2}}
+  questionvariables:
+    n: 2 + rand(3)
+    expr: x^5
+    ta1: int(expr,x)+c
+    ta2: diff(expr, x, n)
+
+- id: 0004
+  name: Poliedros regulares
+  type: multichoice
+  penalty: 1.0
+  questiontext: |
+    Marque as afirmações verdadeiras sobre poliedros regulares.
+    - As faces são polígonos quaisquer. [-30%]
+    - Todos são convexos. [+30%]
+    - Só existem 5 poliedros regulares. [+50%]
+    - Pelo menos um deles possui face hexagonal. [-30%]
+    - Todos possuem faces triangulares. [-30%]
+    - Também são conhecidos como sólidos platônicos. [+20%]
