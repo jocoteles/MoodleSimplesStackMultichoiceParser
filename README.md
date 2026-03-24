@@ -14,7 +14,7 @@ python3 xml_parser.py <arquivo_yaml> [saida_xml]
 | `[saida_xml]`    | Nome do arquivo XML gerado                              | Não          | `output.xml`    |
 
 > [!TIP]
-> O parser carrega automaticamente os templates necessários (`stacknumerical_template.xml`, `stackalgebraic_template.xml` e `multichoice_template.xml`) do diretório atual.
+> O script é autossuficiente e contém internamente os templates necessários para a geração dos arquivos XML.
 
 ---
 
